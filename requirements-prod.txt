@@ -1,0 +1,12 @@
+# Core dependencies (production only - no heavy packages)
+numpy>=1.21.0
+gymnasium>=0.27.0
+pydantic>=1.10.0
+PyYAML>=6.0
+
+# Gradio web interface
+gradio>=4.0.0
+huggingface-hub>=0.20.0
+
+# Lightweight alternatives to optional packages
+# (Removed: torch, stable-baselines3, matplotlib - too heavy)
