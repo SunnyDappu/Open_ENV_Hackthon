@@ -18,8 +18,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY warehouse_env/ ./warehouse_env/
 COPY app.py .
-COPY openenv.yaml .
 COPY README.md .
+COPY Procfile .
 
 # Expose port for Gradio
 EXPOSE 7860
