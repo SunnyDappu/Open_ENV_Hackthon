@@ -1,0 +1,148 @@
+---
+name: WarehousePickingEnv
+version: 1.0.0
+description: |
+  A realistic warehouse robot picking and sorting environment where an AI agent
+  learns to efficiently pick items from shelves and sort them into bins under
+  time and energy constraints.
+
+  Real-world applicability: Automates warehouse operations, reduces picking time,
+  and optimizes robot paths for energy efficiency.
+  
+author: OpenEnv Hackathon Team
+env_class: warehouse_env.WarehouseEnv
+
+# Type definitions
+types:
+  ObservationSpace:
+    robot_position: 
+      type: tuple[float, float]
+      description: Current (x, y) position of robot in warehouse grid
+    robot_battery: 
+      type: float
+      description: Battery level (0.0 to 1.0)
+    items_in_hand: 
+      type: list[dict]
+      description: List of items currently held by robot
+    visible_items: 
+      type: list[dict]
+      description: Items visible in current FOV with positions
+    target_bin: 
+      type: dict | None
+      description: Current target bin location and type requirement
+    time_remaining: 
+      type: float
+      description: Time remaining in episode (0 to max_steps)
+    obstacles: 
+      type: list[tuple[float, float]]
+      description: Positions of obstacles in warehouse
+    bins_filled: 
+      type: dict
+      description: State of bins {bin_id: fill_percentage}
+      
+  ActionSpace:
+    action_type:
+      type: str
+      enum: [move, pick, drop, rotate]
+    parameters:
+      type: dict
+      description: |
+        Parameters specific to action:
+        - move: {direction: "north"|"south"|"east"|"west", speed: 0.0-1.0}
+        - pick: {item_id: int}
+        - drop: {bin_id: int}
+        - rotate: {angle: float}
+
+  Reward:
+    type: float
+    range: [-1.0, 1.0]
+    description: |
+      Composite reward with multiple signals:
+      - Item picking: +0.1 per correct item
+      - Bin completion: +0.3 per full bin
+      - Energy efficiency: bonus for low battery usage
+      - Time efficiency: penalty for slow completion
+      - Path optimization: bonus for shortest paths
+
+# Task definitions
+tasks:
+  - name: "basic_picking"
+    difficulty: "easy"
+    description: "Pick 10 items and sort into 2 bins - simple warehouse layout"
+    config:
+      grid_size: [20, 20]
+      num_items: 10
+      num_bins: 2
+      max_steps: 500
+      battery_capacity: 1.0
+      item_complexity: "simple"
+      
+  - name: "complex_sorting"
+    difficulty: "medium"
+    description: "Pick 25 items into 5 bins with obstacles and multi-item constraints"
+    config:
+      grid_size: [30, 30]
+      num_items: 25
+      num_bins: 5
+      max_steps: 1000
+      battery_capacity: 1.0
+      item_complexity: "medium"
+      num_obstacles: 8
+      requires_multi_item_match: true
+      
+  - name: "expert_optimization"
+    difficulty: "hard"
+    description: "Pick 50 mixed items, energy constraints, dynamic obstacles, time pressure"
+    config:
+      grid_size: [40, 40]
+      num_items: 50
+      num_bins: 8
+      max_steps: 1500
+      battery_capacity: 0.8
+      item_complexity: "hard"
+      num_dynamic_obstacles: 5
+      moving_robots: 2
+      time_bonus_threshold: 0.7
+      
+# Environment capabilities
+capabilities:
+  - observation_space: ObjectObservation
+  - action_space: ContinuousAction
+  - reward: ContinuousScalar
+  - reset_seed: true
+  - deterministic: false
+  - max_episodes: null
+  - render_modes: [human, rgb_array]
+  
+# Evaluation grader
+grader:
+  class: warehouse_env.tasks.WarehouseGrader
+  metrics:
+    - name: "pick_accuracy"
+      weight: 0.3
+      description: "Percentage of items picked correctly (correct item type)"
+    - name: "sort_accuracy"
+      weight: 0.3
+      description: "Percentage of items sorted into correct bins"
+    - name: "efficiency"
+      weight: 0.2
+      description: "Energy and time efficiency combined"
+    - name: "safety"
+      weight: 0.2
+      description: "Collision avoidance and smooth movements"
+  
+  score_formula: |
+    final_score = (
+      0.3 * pick_accuracy +
+      0.3 * sort_accuracy +
+      0.2 * efficiency +
+      0.2 * safety
+    )
+    
+# Compatibility
+openenv_version: "1.0"
+python_version: ">=3.8"
+dependencies:
+  - numpy>=1.21.0
+  - gymnasium>=0.27.0
+  - pydantic>=1.10.0
