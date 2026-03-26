@@ -64,7 +64,8 @@ def example_2_agent_episode():
     print(f"Episode completed:")
     print(f"  Steps: {env.current_step}/{env.max_steps}")
     print(f"  Total Reward: {total_reward:.2f}")
-    print(f"  Items Sorted: {obs['episode_info']['total_items_sorted']}/{obs['episode_info']['total_items']}")
+    print(f"  Items Picked: {obs['episode_info']['total_items_picked']}")
+    print(f"  Items Sorted Correctly: {obs['episode_info']['total_items_sorted_correctly']}")
     print(f"  Final Battery: {obs['robot_battery']:.2f}")
     
     # Grade the episode
@@ -177,7 +178,7 @@ def example_6_custom_agent():
     print(f"Custom Agent Performance:")
     print(f"  Steps: {env.current_step}")
     print(f"  Total Reward: {total_reward:.2f}")
-    print(f"  Items Sorted: {obs['episode_info']['total_items_sorted']}")
+    print(f"  Items Sorted Correctly: {obs['episode_info']['total_items_sorted_correctly']}")
 
 
 def main():

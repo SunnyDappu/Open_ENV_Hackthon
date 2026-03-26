@@ -269,10 +269,9 @@ class SmartAgent:
         battery = observation['robot_battery']
         bins_state = observation.get('bins_state', {})
         
-        # Energy management
-        total_items = observation['episode_info']['total_items']
-        items_sorted = observation['episode_info']['total_items_sorted']
-        items_remaining = total_items - items_sorted
+        # Energy management - check if there are still visible items to sort
+        items_sorted = observation['episode_info']['total_items_sorted_correctly']
+        items_remaining = len(visible_items)  # Items still visible
         
         # If low battery and work remaining, prioritize efficiency
         if battery < 0.3 and items_remaining > 0:
