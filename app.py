@@ -401,5 +401,7 @@ for step in range(100):
 
 
 if __name__ == "__main__":
+    import os
+    port = int(os.getenv("PORT", 7860))
     demo = create_gradio_interface()
-    demo.launch(server_name="127.0.0.1", server_port=7860, share=True)
+    demo.launch(server_name="0.0.0.0", server_port=port, share=False)
