@@ -53,7 +53,7 @@ class WarehouseEnvUI:
             
             status = f"Step {self.env.current_step}/{self.env.max_steps} | " \
                     f"Reward: {reward:.3f} | Battery: {self.current_obs['robot_battery']:.2f} | " \
-                    f"Items Sorted: {self.current_obs['episode_info']['total_items_sorted']}/{self.current_obs['episode_info']['total_items']}"
+                    f"Items Sorted: {self.current_obs['episode_info']['total_items_sorted_correctly']}"
             
             if done:
                 status += " [EPISODE DONE]"
@@ -63,7 +63,7 @@ class WarehouseEnvUI:
                 'robot_battery': float(self.current_obs['robot_battery']),
                 'items_in_hand': len(self.current_obs['items_in_hand']),
                 'visible_items': len(self.current_obs['visible_items']),
-                'items_sorted': self.current_obs['episode_info']['total_items_sorted'],
+                'items_sorted': self.current_obs['episode_info']['total_items_sorted_correctly'],
             }, indent=2)
             
             return status, obs_json, json.dumps(action, indent=2)
@@ -403,5 +403,7 @@ for step in range(100):
 if __name__ == "__main__":
     import os
     port = int(os.getenv("PORT", 7860))
+    # Use 0.0.0.0 for Railway deployment, 127.0.0.1 for local
+    server_name = "0.0.0.0" if os.getenv("RAILWAY_ENVIRONMENT_NAME") else "127.0.0.1"
     demo = create_gradio_interface()
-    demo.launch(server_name="0.0.0.0", server_port=port, share=False)
+    demo.launch(server_name=server_name, server_port=port, share=False)
