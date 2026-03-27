@@ -22,6 +22,7 @@ class WarehouseEnvUI:
         self.current_obs = None
         self.agent = None
         self.episode_data = []
+        self.episode_done = False
     
     def initialize_env(self, task_name: str) -> str:
         """Initialize environment for a task"""
@@ -29,6 +30,7 @@ class WarehouseEnvUI:
             self.env = WarehouseEnv(task_name=task_name, seed=42)
             self.current_obs = self.env.reset()
             self.episode_data = []
+            self.episode_done = False
             return f"✓ Initialized {task_name} successfully"
         except Exception as e:
             return f"✗ Error: {str(e)}"
@@ -38,12 +40,19 @@ class WarehouseEnvUI:
         if self.env is None:
             return "Initialize environment first", "{}", json.dumps({})
         
+        # Check if episode is already done
+        if hasattr(self, 'episode_done') and self.episode_done:
+            return "Episode already completed! Click 'Reset Episode' to start a new one.", "{}", json.dumps({})
+        
         try:
             if self.agent is None or self.agent.__class__.__name__.replace('Agent', '').lower() != agent_name:
                 self.agent = get_baseline_agent(agent_name)
             
             action = self.agent(self.current_obs)
             self.current_obs, reward, done, info = self.env.step(action)
+            
+            # Track episode completion
+            self.episode_done = done
             
             self.episode_data.append({
                 'action': action,
@@ -79,6 +88,7 @@ class WarehouseEnvUI:
         self.current_obs = self.env.reset()
         self.episode_data = []
         self.agent = None
+        self.episode_done = False  # Reset the done flag
         return "Episode reset successfully"
     
     def run_full_episode(self, task_name: str, agent_name: str, max_steps: int = None) -> tuple:

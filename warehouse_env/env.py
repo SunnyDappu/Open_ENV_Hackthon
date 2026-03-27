@@ -396,7 +396,7 @@ class WarehouseEnv:
         item = self.items[item_id]
         distance = np.linalg.norm(np.array(item.position) - self.robot_position)
         
-        if distance < 1.0:  # Can pick if close
+        if distance <= 1.5:  # Can pick if reasonably close (increased from 1.0 to 1.5)
             self.items_in_hand.append(item)
             del self.items[item_id]
             self.items_picked_correctly += 1
@@ -414,7 +414,7 @@ class WarehouseEnv:
         bin_obj = self.bins[bin_id]
         distance = np.linalg.norm(np.array(bin_obj.position) - self.robot_position)
         
-        if distance < 1.0:  # Can drop if close
+        if distance <= 1.5:  # Can drop if reasonably close (increased from 1.0 to 1.5)
             if len(bin_obj.items) < bin_obj.capacity:
                 item = self.items_in_hand.pop(0)
                 

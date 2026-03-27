@@ -86,7 +86,7 @@ class GreedyAgent:
         # Strategy 1: Drop items if we have any and are near a bin
         if items_in_hand and target_bin:
             bin_dist = target_bin['distance']
-            if bin_dist < 2.0:  # Close to bin
+            if bin_dist <= 1.5:  # Close to bin (must match environment requirement)
                 return {
                     'action_type': 'drop',
                     'parameters': {'bin_id': target_bin['id']}
@@ -99,7 +99,7 @@ class GreedyAgent:
                              key=lambda x: np.linalg.norm(np.array(x['position']) - robot_pos))
             item_distance = np.linalg.norm(np.array(closest_item['position']) - robot_pos)
             
-            if item_distance < 2.0:  # Close enough to pick
+            if item_distance <= 1.5:  # Close enough to pick (must match environment requirement)
                 return {
                     'action_type': 'pick',
                     'parameters': {'item_id': closest_item['id']}
@@ -188,7 +188,7 @@ class HierarchicalAgent:
             item_data = next((i for i in visible_items if i['id'] == self.target_item), None)
             if item_data:
                 item_dist = np.linalg.norm(np.array(item_data['position']) - robot_pos)
-                if item_dist < 1.0:
+                if item_dist <= 1.5:  # Match environment pick requirement
                     self.state = 'drop' if items_in_hand else 'explore'
                     return {
                         'action_type': 'pick',
@@ -250,6 +250,7 @@ class SmartAgent:
     def __init__(self):
         self.last_action_type = None
         self.action_counter = 0
+        self.target_item = None  # Commit to a target to avoid oscillation
     
     def __call__(self, observation: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -284,10 +285,10 @@ class SmartAgent:
                     'parameters': {'direction': direction, 'speed': 1.0}
                 }
         
-        # If hand is full, drop items
-        if len(items_in_hand) >= 4 and target_bin:
+        # If hand has items, drop them at bin
+        if len(items_in_hand) > 0 and target_bin:
             bin_dist = target_bin['distance']
-            if bin_dist < 1.5:
+            if bin_dist <= 1.5:
                 return {
                     'action_type': 'drop',
                     'parameters': {'bin_id': target_bin['id']}
@@ -302,21 +303,32 @@ class SmartAgent:
         
         # If visible items and space in hand, pick them
         if visible_items and len(items_in_hand) < 4:
-            closest = min(visible_items, key=lambda x: np.linalg.norm(np.array(x['position']) - robot_pos))
-            dist = np.linalg.norm(np.array(closest['position']) - robot_pos)
+            # If no target item or target no longer visible, pick the closest one
+            if self.target_item is None:
+                closest = min(visible_items, key=lambda x: np.linalg.norm(np.array(x['position']) - robot_pos))
+                self.target_item = closest['id']
             
-            if dist < 1.0:
-                return {
-                    'action_type': 'pick',
-                    'parameters': {'item_id': closest['id']}
-                }
+            # Find target item in visible items
+            target_data = next((i for i in visible_items if i['id'] == self.target_item), None)
+            
+            if target_data:
+                dist = np.linalg.norm(np.array(target_data['position']) - robot_pos)
+                
+                if dist <= 1.5:  # Match environment pick requirement
+                    return {
+                        'action_type': 'pick',
+                        'parameters': {'item_id': self.target_item}
+                    }
+                else:
+                    direction_vec = np.array(target_data['position']) - robot_pos
+                    direction = self._vec_to_direction(direction_vec)
+                    return {
+                        'action_type': 'move',
+                        'parameters': {'direction': direction, 'speed': 0.75}
+                    }
             else:
-                direction_vec = np.array(closest['position']) - robot_pos
-                direction = self._vec_to_direction(direction_vec)
-                return {
-                    'action_type': 'move',
-                    'parameters': {'direction': direction, 'speed': 0.75}
-                }
+                # Target item no longer visible, reset and pick new one
+                self.target_item = None
         
         # Explore for items
         direction = np.random.choice(['north', 'south', 'east', 'west'])
@@ -342,6 +354,10 @@ class SmartAgent:
         }
         
         angle = np.arctan2(vec[1], vec[0])
+        # Normalize angle to [0, 2π) range to match angles dictionary
+        if angle < 0:
+            angle += 2 * np.pi
+        
         closest_direction = min(angles.keys(), key=lambda d: abs(angles[d] - angle))
         return closest_direction
 
